@@ -51,6 +51,9 @@ void setup(){
   Serial.begin(9600);
   Serial.println("Program is running...");
   for(int i=0; i<3; i++){
+      servomotor[i].pos = 180;
+      servomotor[i].inPos = 180;
+  
     servomotor[i].servo.attach(11-i);
     servomotor[i].time = millis();
   }
