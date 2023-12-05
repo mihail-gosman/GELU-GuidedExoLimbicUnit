@@ -5,13 +5,15 @@ const char EOFn = '\n';
 const char COMMAND = 1;
 const char NUMBER = 2;
 
-const char PAUSE = 200;
+const char PAUSE = 3;
+const char CONTINUE = 4;
+const char POS_SERVO_1 = 5;
 
 const int MAX_TOKENS = 32;
 const int MAX_TOKEN_TYPE = 16;
 const int MAX_TOKEN_VALUE = 16;
 const int MAX_BUFFER = 16;
-const int fast = 0;
+
 
 void getInput();
 void executeInput();
@@ -21,7 +23,6 @@ char buffer[MAX_BUFFER];
 unsigned int bufferIndex = 0;
 unsigned int tokensIndex = 0;
 char inByte;
-int activeInput = 0;
 int pause = 0;
 
 
@@ -52,9 +53,11 @@ void setup(){
 
 void loop() {
   getInput();
-
+  
   if(!pause)
-  ;
+  {
+      ;
+  }
 }
 
 
@@ -69,7 +72,14 @@ void getInput()
       if(tokenBuffer.type == COMMAND)
       {
         if(!strcmp(buffer, "PAUSE"))
-          tokenBuffer.value_char = PAUSE;
+        {
+            tokenBuffer.value_char = PAUSE;
+        }
+        else if(!strcmp(buffer, "CONTINUE"))
+        {
+            tokenBuffer.value_char = CONTINUE;
+
+        }
       }
       else 
       {
@@ -115,6 +125,19 @@ void getInput()
 void execute(){
   while(tokens[tokensIndex].type != 0)
   {
+    if(tokens[tokensIndex].type = COMMAND)
+    {
+      if(tokens[tokensIndex].value_char == PAUSE)
+      {
+        pause = 1;
+      }
+      else if(tokens[tokensIndex].value_char == CONTINUE)
+      {
+       pause = 0;
+      }
     
+    }
+    tokensIndex += 1;
   }
+  tokensIndex = 0;
 }
