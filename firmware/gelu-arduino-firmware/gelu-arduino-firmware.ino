@@ -5,7 +5,7 @@ const char EOFn = '\n';
 const char COMMAND = 1;
 const char NUMBER = 2;
 
-const char PAUSE = 3;
+const char PAUSE = 200;
 
 const int MAX_TOKENS = 32;
 const int MAX_TOKEN_TYPE = 16;
@@ -113,9 +113,8 @@ void getInput()
 
 
 void execute(){
-  for(int i=0; i<MAX_TOKENS; i++)
-  if(tokens[i].type != 0)
-    Serial.println((int)tokens[i].type);
-
-  Serial.println('\n');
+  while(tokens[tokensIndex].type != 0)
+  {
+    
+  }
 }
