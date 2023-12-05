@@ -7,16 +7,18 @@ const char NUMBER = 2;
 
 const char PAUSE = 3;
 const char CONTINUE = 4;
-const char POS_SERVO_1 = 5;
+const char SERVO_POS_1 = 5;
 
 const int MAX_TOKENS = 32;
 const int MAX_TOKEN_TYPE = 16;
 const int MAX_TOKEN_VALUE = 16;
 const int MAX_BUFFER = 16;
+const int MIN_SERVO_TIME = 20;
 
 
 void getInput();
 void executeInput();
+void servoUpdate();
 
 
 char buffer[MAX_BUFFER];
@@ -36,18 +38,22 @@ struct Token {
 Token tokenBuffer;
 int buffIndex;
 int isFirst = 1;
-/*
+
 struct Servos{
   Servo servo;
   int pos = 0;
+  int inPos = 0;
+  unsigned long time;
 } servomotor[2];
-*/
+
 
 void setup(){
   Serial.begin(9600);
   Serial.println("Program is running...");
-//  for(int i=0; i<3; i++)
-  //  servomotor[i].servo.attach(11-i);
+  for(int i=0; i<3; i++){
+    servomotor[i].servo.attach(11-i);
+    servomotor[i].time = millis();
+  }
 }
 
 
@@ -56,7 +62,9 @@ void loop() {
   
   if(!pause)
   {
-      ;
+      servoUpdate();
+      Serial.println("Servo [1] position:");
+      Serial.println(servomotor[0].pos);
   }
 }
 
@@ -78,7 +86,10 @@ void getInput()
         else if(!strcmp(buffer, "CONTINUE"))
         {
             tokenBuffer.value_char = CONTINUE;
-
+        }
+        else if(!strcmp(buffer, "SERVO_POS_1"))
+        {
+            tokenBuffer.value_char = SERVO_POS_1;
         }
       }
       else 
@@ -96,7 +107,7 @@ void getInput()
       {
         tokens[tokensIndex] = tokenBuffer;
         tokensIndex = 0;
-        execute();
+        executeInput();
       }
     }
     else 
@@ -122,7 +133,7 @@ void getInput()
 }
 
 
-void execute(){
+void executeInput(){
   while(tokens[tokensIndex].type != 0)
   {
     if(tokens[tokensIndex].type = COMMAND)
@@ -135,9 +146,31 @@ void execute(){
       {
        pause = 0;
       }
-    
+      else if (tokens[tokensIndex].value_char == SERVO_POS_1)
+      {
+        tokensIndex += 1;
+        servomotor[0].inPos = tokens[tokensIndex].value_int;
+      }
     }
     tokensIndex += 1;
   }
   tokensIndex = 0;
+}
+
+void servoUpdate()
+{
+  for(int i = 0; i<3; i++)
+  {
+    if(servomotor[i].inPos != servomotor[i].pos && millis() - servomotor[i].time > MIN_SERVO_TIME)
+    {
+      if(servomotor[i].inPos >= servomotor[i].pos)
+        servomotor[i].pos += 1;
+      else
+        servomotor[i].pos -= 1;
+      servomotor[i].time = millis();
+    }
+
+    servomotor[i].servo.write(servomotor[i].pos);
+    
+  }
 }
