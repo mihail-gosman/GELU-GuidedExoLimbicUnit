@@ -1,0 +1,23 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#define L1 12
+#define L2 10
+#define L3 7.5
+#define pi 3.14159265359
+int main()
+{
+    float theta1, theta2,theta3 , x, y;
+    printf("Introdu coordomatele x si y:");
+    scanf("%f %f", &x, &y);
+    x=x-L3;
+    theta2 = -acos((x * x + y * y - L1 * L1 - L2 * L2) / (2 * L1 * L2));
+
+    theta1 = atan2(y, x) + atan2((L2 * sin(theta2)), (L1 + L2 * cos(theta2)));
+    theta1=theta1*180/pi;
+    theta2=theta2*180/pi;
+    theta3=180-theta1+theta2;
+    printf("Theta1=%f\nTheta2=%f\nTheta3=%f", theta1, theta2, theta3);
+
+    return 0;
+}
