@@ -56,7 +56,7 @@ void loop(){
 
     Serial.println(command.arg[i]);
   }
-  
+  delay(1000);
 }
 
 
@@ -87,11 +87,13 @@ int getCommand(){
               } else if (!strcmp(buffer, "SERVO1_POS")) {
                 command.type = SERVO1_POS;
               }
+
               isCommand = 0;
             } else {
               command.arg[argIndex] = atoi(buffer);
               argIndex += 1;
             }
+            
             bufferIndex = 0;
           } else {
             buffer[bufferIndex] = inByte;
@@ -100,8 +102,9 @@ int getCommand(){
         }
         
       } while (inByte != EOT);
-    argIndex = 0;
-    isCommand = 1;
+
+      argIndex = 0;
+      isCommand = 1;
     }
   }
   return 1;
