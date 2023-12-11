@@ -1,179 +1,109 @@
+#include <Stepper.h>
 #include <Servo.h>
-#include <ste
-const char EOFn = '\n';
-
-const char COMMAND = 1;
-const char NUMBER = 2;
-
-const char PAUSE = 3;
-const char CONTINUE = 4;
-const char SERVO_POS_1 = 5;
-
-const int MAX_TOKENS = 32;
-const int MAX_TOKEN_TYPE = 16;
-const int MAX_TOKEN_VALUE = 16;
-const int MAX_BUFFER = 16;
-const int MIN_SERVO_TIME = 20;
 
 
-void getInput();
-void executeInput();
-void servoUpdate();
+const char CONTINUE = 0x00;  //
+const char STOP =  0x0F;      // 
+const char SERVO1_POS = 0x21; 
+
+const char SOT =  '>';//0x02;       //  start of text
+const char EOT =  '\n';//0x03;       //  end of text
 
 
-char buffer[MAX_BUFFER];
-unsigned int bufferIndex = 0;
-unsigned int tokensIndex = 0;
-char inByte;
-int pause = 0;
+const int BUFFER_SIZE = 16;
+const int MAX_ARG = 8;                  
+const int SERVO_PIN[3] = {11, 10, 9};   //  The pins used to controll the 3 servos
 
 
-struct Token {
+int getCommand();    
+
+
+struct Command{
   char type;
-  int value_int;
-  char value_char;
-} tokens[MAX_TOKENS];
+  int arg[MAX_ARG];
+};
+
+// 
+struct myServo{
+  Servo servomotor;
+  int position;
+  int inPosition;
+  long deltaTime;
+} servo[3];
 
 
-Token tokenBuffer;
-int buffIndex;
-int isFirst = 1;
-
-struct Servos{
-  Servo servo;
-  int pos = 0;
-  int inPos = 0;
-  unsigned long time;
-} servomotor[2];
+Command command;
 
 
 void setup(){
   Serial.begin(9600);
-  Serial.println("Program is running...");
-  for(int i=0; i<3; i++){
-      servomotor[i].pos = 180;
-      servomotor[i].inPos = 180;
-  
-    servomotor[i].servo.attach(11-i);
-    servomotor[i].time = millis();
+  Serial.println("The program is running...");
+
+  for(int i = 0; i < 3; i++){
+    servo[i].servomotor.attach(SERVO_PIN[i]);
   }
 }
 
 
-void loop() {
-  getInput();
+void loop(){
+  getCommand();
+  static int lol = 1;
+
+  Serial.print("Command: ");
   
-  if(!pause)
-  {
-      servoUpdate();
-      Serial.println("Servo [1] position:");
-      Serial.println(servomotor[0].pos);
+  Serial.println(int(command.type));
+  for(int i=0; i<MAX_ARG; i++) {
+
+    Serial.println(command.arg[i]);
   }
+  
 }
 
 
-void getInput()
-{
-  if (Serial.available()>0) {
+int getCommand(){
+  static char inByte;
+  static char buffer[BUFFER_SIZE];
+  static int bufferIndex = 0;
+  static int argIndex = 0;
+  static int isCommand = 1;
+ 
+  if (Serial.available() > 0) {
     inByte = Serial.read();
-    
-    if (inByte == ' ' || inByte == '\n') {
-      buffer[bufferIndex] = '\0';
+    //
 
-      if(tokenBuffer.type == COMMAND)
-      {
-        if(!strcmp(buffer, "PAUSE"))
-        {
-            tokenBuffer.value_char = PAUSE;
+    if (inByte == SOT) {
+      do {
+        if (Serial.available() > 0) {
+          inByte = Serial.read();
+          
+          if(inByte == ' ' || inByte == EOT) {
+            buffer[bufferIndex] = '\0';
+            
+            if (isCommand) {
+              if (!strcmp(buffer, "STOP")) {
+                command.type = STOP;
+              } else if (!strcmp(buffer, "CONTINUE")) {
+                command.type = CONTINUE;
+              } else if (!strcmp(buffer, "SERVO1_POS")) {
+                command.type = SERVO1_POS;
+              }
+              isCommand = 0;
+            } else {
+              command.arg[argIndex] = atoi(buffer);
+              argIndex += 1;
+            }
+            bufferIndex = 0;
+          } else {
+            buffer[bufferIndex] = inByte;
+            bufferIndex += 1;
+          }
         }
-        else if(!strcmp(buffer, "CONTINUE"))
-        {
-            tokenBuffer.value_char = CONTINUE;
-        }
-        else if(!strcmp(buffer, "SERVO_POS_1"))
-        {
-            tokenBuffer.value_char = SERVO_POS_1;
-        }
-      }
-      else 
-      {
-        tokenBuffer.value_int = atoi(buffer);
-      }
-      tokens[tokensIndex] = tokenBuffer;
-      tokenBuffer.type = 0;
-      tokenBuffer.value_char = 0;
-      tokenBuffer.value_int = 0;
-      tokensIndex += 1;
-      isFirst = 1;
-      bufferIndex = 0;
-      if(inByte == '\n')
-      {
-        tokens[tokensIndex] = tokenBuffer;
-        tokensIndex = 0;
-        executeInput();
-      }
+        
+      } while (inByte != EOT);
+    argIndex = 0;
+    isCommand = 1;
     }
-    else 
-    {
-      if(isFirst)
-      {
-        if(isalpha(inByte))
-        {
-          tokenBuffer.type = COMMAND;  
-        }
-        else 
-        {
-          tokenBuffer.type = NUMBER;
-        }
-        isFirst = 0;
-      }
-      buffer[bufferIndex] = inByte;
-      bufferIndex += 1;
-    }
-    
   }
-  
+  return 1;
 }
 
-
-void executeInput(){
-  while(tokens[tokensIndex].type != 0)
-  {
-    if(tokens[tokensIndex].type = COMMAND)
-    {
-      if(tokens[tokensIndex].value_char == PAUSE)
-      {
-        pause = 1;
-      }
-      else if(tokens[tokensIndex].value_char == CONTINUE)
-      {
-       pause = 0;
-      }
-      else if (tokens[tokensIndex].value_char == SERVO_POS_1)
-      {
-        tokensIndex += 1;
-        servomotor[0].inPos = tokens[tokensIndex].value_int;
-      }
-    }
-    tokensIndex += 1;
-  }
-  tokensIndex = 0;
-}
-
-void servoUpdate()
-{
-  for(int i = 0; i<3; i++)
-  {
-    if(servomotor[i].inPos != servomotor[i].pos && millis() - servomotor[i].time > MIN_SERVO_TIME)
-    {
-      if(servomotor[i].inPos >= servomotor[i].pos)
-        servomotor[i].pos += 1;
-      else
-        servomotor[i].pos -= 1;
-      servomotor[i].time = millis();
-    }
-
-    servomotor[i].servo.write(servomotor[i].pos);
-    
-  }
-}
