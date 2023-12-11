@@ -16,6 +16,7 @@ const int SERVO_PIN[3] = {11, 10, 9};   //  The pins used to controll the 3 serv
 
 
 int getCommand();    
+int executeCommand();
 
 
 struct Command{
@@ -35,6 +36,10 @@ struct myServo{
 Command command;
 
 
+int stop = 0;
+int error = 0;
+
+
 void setup(){
   Serial.begin(9600);
   Serial.println("The program is running...");
@@ -46,17 +51,14 @@ void setup(){
 
 
 void loop(){
-  getCommand();
-  static int lol = 1;
-
-  Serial.print("Command: ");
-  
-  Serial.println(int(command.type));
-  for(int i=0; i<MAX_ARG; i++) {
-
-    Serial.println(command.arg[i]);
+  error = getCommand();
+  if (!error) {
+    error = executeCommand();
   }
-  delay(1000);
+  Serial.println(servo[0].inPosition);
+  if (!stop) {
+    ;
+  }
 }
 
 
@@ -93,7 +95,7 @@ int getCommand(){
               command.arg[argIndex] = atoi(buffer);
               argIndex += 1;
             }
-            
+
             bufferIndex = 0;
           } else {
             buffer[bufferIndex] = inByte;
@@ -107,6 +109,19 @@ int getCommand(){
       isCommand = 1;
     }
   }
-  return 1;
+  return 0;
+}
+
+
+int executeCommand(){
+  if (command.type == STOP) {
+    stop = 1;
+  } else if (command.type == CONTINUE) {
+    stop = 0;
+  } else if (command.type == SERVO1_POS) {
+    servo[0].inPosition = command.arg[0];
+  }
+
+  return 0;
 }
 
