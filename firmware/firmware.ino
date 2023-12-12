@@ -14,8 +14,10 @@ const char EOT = '>';  // End of text
 // Define buffer and array sizes
 const int BUFFER_SIZE = 16;
 const int MAX_ARG = 8;
-const int MAX_TIME = 50;
+const int SERVO_DELAY = 50;
+const int STEPS_PER_REVOLUTION = 2038;   // Defines the number of steps per rotation
 const int SERVO_PIN[3] = {11, 10, 9};  // The pins used to control the 3 servos
+const int STEPPER_PIN[4] = {12, 8, 7, 4}; // IN1 IN2 IN3 IN4
 
 // Data structure to represent a command
 struct Command {
@@ -31,6 +33,8 @@ struct myServo {
   long deltaTime;
 } servo[3];
 
+Stepper  myStepper = Stepper(STEPS_PER_REVOLUTION, STEPPER_PIN[0], STEPPER_PIN[1], STEPPER_PIN[2], STEPPER_PIN[3]);
+
 // Global instance of the Command struct
 Command command;
 
@@ -38,22 +42,22 @@ Command command;
 int stop = 0;
 int error = 0;
 
-// Setup function
+// Setup function //
 void setup() {
   Serial.begin(9600);
   Serial.println("The program is running...");
 
   // Attach servos to pins
-  for (int i = 0; i < 3; i++) {
-    servo[i].servomotor.attach(SERVO_PIN[i]);
-  }
+  initializeServos();  
 }
 
-// Main loop
+// Main loop   //
 void loop() {
   // Get and execute commands if no errors
   error = getCommand();
-  if (!error) {
+  if (error) {
+    errorHandler(error);
+  } else {
     error = executeCommand();
   }
 
@@ -98,12 +102,18 @@ int getCommand() {
                 command.type = SERVO1_POS;
               } else if (!strcmp(buffer, "SERVO2_POS")) {
                 command.type = SERVO2_POS;
+              } else {
+                return 1; // Unknown command error
               }
 
               isCommand = 0;
             } else {
-              command.arg[argIndex] = atoi(buffer);
-              argIndex += 1;
+              if (argIndex < MAX_ARG) {
+                command.arg[argIndex] = atoi(buffer);
+                argIndex += 1;
+              } else {
+                return 2; // Too many arguments error
+              }
             }
 
             bufferIndex = 0;
@@ -140,15 +150,37 @@ int executeCommand() {
 int update() {
   for (int i = 0; i < 3; i++) {
     if (servo[i].position != servo[i].inPosition) {
-      if (millis() - servo[i].deltaTime >= MAX_TIME) {
+      if (millis() - servo[i].deltaTime >= SERVO_DELAY) {
         if (servo[i].position > servo[i].inPosition) {
           servo[i].position -= 1;
         } else {
           servo[i].position += 1;
         }
+        servo[i].deltaTime = millis();
       }
     }
     servo[i].servomotor.write(servo[i].position);
   }
   return 0;
+}
+
+void initializeServos() {
+  for (int i = 0; i < 3; i++) {
+      servo[i].servomotor.attach(SERVO_PIN[i]);
+    }
+}
+
+// Function to handle errors
+void errorHandler(int errorCode) {
+  switch (errorCode) {
+    case 1:
+      Serial.println("Error: Unknown command");
+      break;
+    case 2:
+      Serial.println("Error: Too many arguments");
+      break;
+    // Add more cases for additional error scenarios as needed
+    default:
+      Serial.println("Error: Unknown error");
+  }
 }
