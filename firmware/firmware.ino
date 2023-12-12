@@ -8,18 +8,14 @@ const char SERVO1_POS = 0x21;
 const char SERVO2_POS = 0x22;
 
 // Define start and end of text characters
-const char SOT = '>';  // Start of text
-const char EOT = '\n';  // End of text
+const char SOT = '<';  // Start of text
+const char EOT = '>';  // End of text
 
 // Define buffer and array sizes
 const int BUFFER_SIZE = 16;
 const int MAX_ARG = 8;
 const int MAX_TIME = 50;
 const int SERVO_PIN[3] = {11, 10, 9};  // The pins used to control the 3 servos
-
-// Global variables
-int stop = 0;
-int error = 0;
 
 // Data structure to represent a command
 struct Command {
@@ -37,6 +33,10 @@ struct myServo {
 
 // Global instance of the Command struct
 Command command;
+
+// Global variables
+int stop = 0;
+int error = 0;
 
 // Setup function
 void setup() {
