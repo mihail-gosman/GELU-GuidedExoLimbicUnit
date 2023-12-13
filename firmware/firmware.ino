@@ -4,6 +4,7 @@
 // Define constants for command types
 const char CONTINUE = 0x00;
 const char STOP = 0x0F;
+const char SERVO_POS = 0X20;
 const char SERVO1_POS = 0x21;
 const char SERVO2_POS = 0x22;
 
@@ -30,13 +31,22 @@ struct myServo {
   Servo servomotor;
   int position;
   int inPosition;
-  long deltaTime;
+  unsigned long deltaTime;
 } servo[3];
+
+// Data structure for LED
+struct led {
+  int state = 0;
+  unsigned long deltaTime;
+};
 
 Stepper  myStepper = Stepper(STEPS_PER_REVOLUTION, STEPPER_PIN[0], STEPPER_PIN[1], STEPPER_PIN[2], STEPPER_PIN[3]);
 
 // Global instance of the Command struct
 Command command;
+
+// Global instance for the built in LED
+  led ledIndicator;
 
 // Global variables
 int stop = 0;
@@ -46,9 +56,10 @@ int error = 0;
 void setup() {
   Serial.begin(9600);
   Serial.println("The program is running...");
-
   // Attach servos to pins
   initializeServos();  
+  // Set the led indicator
+  pinMode(LED_BUILTIN, OUTPUT);
 }
 
 // Main loop   //
@@ -61,8 +72,8 @@ void loop() {
     error = executeCommand();
   }
 
-  // Print servo position to serial monitor
-  Serial.println(servo[0].position);
+  // Led indicator
+  ledUsage();
 
   // Update servos if not in stop state
   if (!stop) {
@@ -94,17 +105,7 @@ int getCommand() {
 
             // Process command or argument
             if (isCommand) {
-              if (!strcmp(buffer, "STOP")) {
-                command.type = STOP;
-              } else if (!strcmp(buffer, "CONTINUE")) {
-                command.type = CONTINUE;
-              } else if (!strcmp(buffer, "SERVO1_POS")) {
-                command.type = SERVO1_POS;
-              } else if (!strcmp(buffer, "SERVO2_POS")) {
-                command.type = SERVO2_POS;
-              } else {
-                return 1; // Unknown command error
-              }
+              parseCommand(buffer);
 
               isCommand = 0;
             } else {
@@ -131,7 +132,24 @@ int getCommand() {
   return 0;
 }
 
-// Function to execute the received command
+// Function to parse the command **
+int parseCommand(char * buffer) {
+  if (!strcmp(buffer, "STOP")) {
+    command.type = STOP;
+  } else if (!strcmp(buffer, "CONTINUE")) {
+    command.type = CONTINUE;
+  } else if (!strcmp(buffer, "SERVO1_POS")) {
+    command.type = SERVO1_POS;
+  } else if (!strcmp(buffer, "SERVO2_POS")) {
+    command.type = SERVO2_POS;
+  } else if (!strcmp(buffer, "SERVO_POS")) {
+    command.type = SERVO2_POS;
+  } else {
+    return 1;  // Unknown command error
+  }
+}
+
+// Function to execute the received command  **
 int executeCommand() {
   if (command.type == STOP) {
     stop = 1;
@@ -141,6 +159,9 @@ int executeCommand() {
     servo[0].inPosition = command.arg[0];
   } else if (command.type == SERVO2_POS) {
     servo[1].inPosition = command.arg[0];
+  } else if (command.type == SERVO_POS) {
+    servo[0].inPosition = command.arg[0];
+    servo[1].inPosition = command.arg[1];
   }
 
   return 0;
@@ -182,5 +203,13 @@ void errorHandler(int errorCode) {
     // Add more cases for additional error scenarios as needed
     default:
       Serial.println("Error: Unknown error");
+  }
+}
+
+void ledUsage() {
+  if (ledIndicator.state == 0) {
+    digitalWrite(LED_BUILTIN, LOW);
+  } else {
+    digitalWrite(LED_BUILTIN, HIGH);
   }
 }
