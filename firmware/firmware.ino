@@ -7,6 +7,7 @@ const char STOP = 0x0F;
 const char SERVO_POS = 0X20;
 const char SERVO1_POS = 0x21;
 const char SERVO2_POS = 0x22;
+const char SERVO3_POS = 0x23;
 
 // Define start and end of text characters
 const char SOT = '<';  // Start of text
@@ -15,7 +16,7 @@ const char EOT = '>';  // End of text
 // Define buffer and array sizes
 const int BUFFER_SIZE = 16;
 const int MAX_ARG = 8;
-const int SERVO_DELAY = 50;
+const int SERVO_DELAY = 20;
 const int STEPS_PER_REVOLUTION = 2038;   // Defines the number of steps per rotation
 const int SERVO_PIN[3] = {11, 10, 9};  // The pins used to control the 3 servos
 const int STEPPER_PIN[4] = {12, 8, 7, 4}; // IN1 IN2 IN3 IN4
@@ -71,6 +72,16 @@ void loop() {
   } else {
     error = executeCommand();
   }
+
+  Serial.print(servo[0].position);
+  Serial.print(" ");
+  Serial.print(servo[1].position);
+  Serial.print(" ");
+  Serial.print(servo[2].position);
+  Serial.println(" ");
+
+
+
 
   // Led indicator
   ledUsage();
@@ -142,8 +153,10 @@ int parseCommand(char * buffer) {
     command.type = SERVO1_POS;
   } else if (!strcmp(buffer, "SERVO2_POS")) {
     command.type = SERVO2_POS;
+  }  else if (!strcmp(buffer, "SERVO3_POS")) {
+    command.type = SERVO3_POS; 
   } else if (!strcmp(buffer, "SERVO_POS")) {
-    command.type = SERVO2_POS;
+    command.type = SERVO_POS;
   } else {
     return 1;  // Unknown command error
   }
@@ -159,9 +172,12 @@ int executeCommand() {
     servo[0].inPosition = command.arg[0];
   } else if (command.type == SERVO2_POS) {
     servo[1].inPosition = command.arg[0];
+  } else if (command.type == SERVO3_POS) {
+    servo[2].inPosition = command.arg[0];
   } else if (command.type == SERVO_POS) {
     servo[0].inPosition = command.arg[0];
     servo[1].inPosition = command.arg[1];
+    servo[2].inPosition = command.arg[2];
   }
 
   return 0;
@@ -188,6 +204,7 @@ int update() {
 void initializeServos() {
   for (int i = 0; i < 3; i++) {
       servo[i].servomotor.attach(SERVO_PIN[i]);
+      servo[i].inPosition = 90;
     }
 }
 
