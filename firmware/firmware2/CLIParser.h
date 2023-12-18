@@ -1,8 +1,8 @@
 #ifndef CLIPARSER_H_INCLUDED
 #define CLIPARSER_H_INCLUDED
 
-#define MAX_ARGS 10  // Maximum number of arguments allowed
-#define MAX_ARG_LENGTH 50  // Maximum length of each argument
+#define MAX_ARGS 5  // Maximum number of arguments allowed
+#define MAX_ARG_LENGTH 16  // Maximum length of each argument
 #define MAX_INPUT_LENGTH (MAX_ARGS * (MAX_ARG_LENGTH + 1))  // Maximum length of the entire input string
 
 #include <stdio.h>

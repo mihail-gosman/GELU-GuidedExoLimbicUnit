@@ -1,11 +1,16 @@
 #include <Servo.h>
 #include <Stepper.h>
-
 #include "CLIParser.h"
+
+
+uint8_t ID = 0x00;
+
 
 void setup() {
   Serial.begin(9600);
-  Serial.println("System initialization")
+  
+
+
 
 }
 
